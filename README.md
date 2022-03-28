@@ -97,3 +97,129 @@
 1. 브라우저 검색창에 'www.google.com'을 입력한다.
 2. DNS 서버는 요청으로 들어온 도메인 명('google.com')에 매칭되는 IP주소를 브라우저에게 응답한다.
 3. 브라우저는 받은 IP주소로 구글 웹홈페이지를 응답받는다.
+
+
+---
+
+## URI
+
+- 단일 자원 식별자(Uniform Resource Identifier)
+- URL과 URN을 포함하는 개념이다.
+  - URL(Resource Locator)
+    - http://naver.com:8080/over/there?name=ferrt#nose
+    - http 위치: 스키마
+    - naver.com:8080 위치: authority
+    - /over/there 위치: path
+    - name=ferret 위치: query
+    - noes 위치 fragment
+  - URN(Resource Name)
+    - urn:example:animal:ferret:nose
+      - urn 위치: 스키마
+      - example:animal:ferret:nose 위치: path
+
+### URI 의미
+
+- Uniform: 리소스를 식별하는 합의된 방식
+- Resource: 자원, URI로 식별할 수 있는 모든 것. 
+- Identifier: 다른 항목과 구분하는데 필요한 정보
+
+
+### URL, URN 의미
+
+- URL - Locator: 리소스가 있는 위치를 지정
+- URN - Name: 리로스에 이름을 부여
+- 위치는 변하지만 이름은 변하지 않는다.
+- urn:isbn:892312312 (특정 책의 isbn URN)
+- URN 이름만으로 리소스를 찾는 방법은 보편화되지 않았다.
+- 앞으로 URI와 URL은 같은 의미로 취급한다.
+
+
+### URL 구조
+
+- schema://\[userinfo@]host\[:port]\[/path]\[?query][#fragment]
+- https://<d>www.<d>google.com:443/search?q=hello&hl=ko
+- 프로토콜은 https
+- 호스트명은 www.<D>google.com
+- 포트번호는 443
+- 패스는 /search
+- 쿼리파라미터는 q=hello&hl=ko
+
+
+### URL - Schema
+
+- `https`://www<d>.google.com:443/search?q=hello&hl=ko
+- 프로토콜을 입력하는 위치
+- 프로토콜은 통신하는 규칙을 말한다.
+  - 예를 들어, HTTP, HTTPS, FTP 등이 있다.
+- http는 80포트, https 443포트를 주로 사용한다.
+- 포트는 생략할 수 있다.
+- http에 보안 기능을 추가한 것이 https다.
+
+
+### URL - userinfo
+
+- 사용자정보를 입력하는 위치
+- 거의 사용하지 않는다.
+
+
+### URL - host
+
+- https://**www<d>.google.com**:443/search?q=hello&hl=ko
+- 호스트명이라고 한다.
+- 도메인명 또는 IP 주소를 입력한다.
+
+
+### URL - PORT
+
+- https://<d>www.<d>google.com:**443**/search?q=hello&hl=ko
+- 포토 번호가 들어가는 위치
+- 일반적으로 생략한다
+- 생략시 http는 80, https는 443을 사용한다.
+
+
+### URL - path
+
+- https://<d>www.<d>google.com:443**/search**?q=hello&hl=ko
+- 리소스의 경로를 의미한다.
+- 계층적인 구조다.
+- 예시
+  - /home/file1.jpg
+  - /members/
+  - /members/100, /items/iphone12
+
+
+### URL - query
+
+- https://<d>www.<d>google.com:443/search**?q=hello&hl=ko**
+- 키:밸류 형태를 가진다.
+- ?로 시작하고 &로 추가할 수 있다.
+- 쿼리 파라미터, 쿼리 스트링으로 불린다.
+- 웹서버에 제공하는 파라미터다.
+
+
+### URL - fragment
+
+- https://<d>docs.spring.io/spring-boot/docs/current/reference/html/getting-
+  started.html**#getting-started-introducing-spring-boot**
+- html 북마크 등에 사용된다.
+- 서버에 전송하는 정보가 아니다.
+
+
+## 웹브라우저 요청의 흐름
+
+1. http://<d>www.<d>google.com:433/search?q=hello&hl=ko 엔터
+2. DNS 서버에서 도메인명과 매칭되는 IP주소를 반환
+3. HTTP 요청 메세지가 생성된다.
+   - GET /search?q=hello&hl=ko HTTP/1.1
+   - Host:www.<d>google.com
+4. HTTP 요청 메세지를 서버에 전송한다.
+   1. 소켓 라이브러리를 통해 브라우저(애플레케이션 계층)에서 TCP/IP로 이동한다.
+   2. TCP/IP 패킷을 생성한다.패킷 안에 HTTP 요청 메세지가 들어있다.
+   3. 네트워크 인터페이스 계층으로 이동하고 인터넷을 통해 서버로 전달된다.
+5. 서버는 HTTP 응답 메세지를 브라우저(클라이언트)에 전송한다.
+   - HTTP/1.1 200 OK
+   - Content-Type: text/html;charset=UTF-8
+   - Content-Length:3423
+   - 공백
+   - \<html>... 데이터 
+6. 브라우저는 받은 html 데이터를 렌더링하여 화면에 출력한다.
