@@ -171,11 +171,10 @@
 
 ### URL - PORT
 
-- http<d>s://www.<d>google.com:**443**/search?q=hello&hl=ko
+- https<d>://www<d>.google.com:**443**/search?q=hello&hl=ko
 - 포토 번호가 들어가는 위치
 - 일반적으로 생략한다
 - 생략시 http는 80, https는 443을 사용한다.
-
 
 ### URL - path
 
