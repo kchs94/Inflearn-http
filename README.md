@@ -178,7 +178,7 @@
 
 ### URL - path
 
-- https://<d>www.<d>google.com:443**/search**?q=hello&hl=ko
+- https<d>://www.<d>google.com:443**/search**?q=hello&hl=ko
 - 리소스의 경로를 의미한다.
 - 계층적인 구조다.
 - 예시
