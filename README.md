@@ -178,7 +178,7 @@
 
 ### URL - path
 
-- https<d>://www.<d>google.com:443**/search**?q=hello&hl=ko
+- https<d>://www<d>.google.com:443**/search**?q=hello&hl=ko
 - 리소스의 경로를 의미한다.
 - 계층적인 구조다.
 - 예시
@@ -470,21 +470,21 @@
 ### API URI 동사(행위)를 포함하여 설계하기
 
 - 회원 목록 조회
-  - /read-member-list
+  - /**read**-member-list
 - 회원 조회
-  - /read-member-by-id
+  - /**read**-member-by-id
 - 회원 등록
-  - /create-member
+  - /**create**-member
 - 회원 수정
-  - /update-member
+  - /**update**-member
 - 회원 삭제
-  - /remove-member
+  - /**remove**-member
 
 
 ### 동사를 포함하는 URI는 좋은 URI가 아니다.
 
-- 왜냐하면 좋은 URI 설계는 ** 리소스(회원)를 식별(구별)**한다.
-- 위의 URI는 리소스가 아닌 행위를 식별(구분)한다.
+- 왜냐하면 좋은 URI 설계는 **리소스**(회원)를 식별(구별)한다.
+- 위의 URI는 리소스가 아닌 **행위**를 식별(구분)한다.
 
 
 ### 좋은 API URI는 무엇일까?
@@ -823,3 +823,299 @@
   - POST, PATCH로 본문 내용까지 캐시 키로 고려해야 되는데, 구현이 쉽지 않다.
 
 --- 
+
+# HTTP 메소드 활용하기
+
+목차
+- 클라이언트에서 서버로 데이터 전송하기
+- HTTP API 설계 예시
+
+
+## 클라이언트에서 서버로 데이터 전송하는 2가지 방법
+
+### 쿼리 파리미터를 통한 데이터 전송하기
+
+- GET 메소드를 사용한다
+- 주로 검색과 같은 정렬 필터를 사용할 때 사용하는 방법이다.
+
+
+### 메세지 바디를 통한 데이터 전송하기
+
+- POST, PUT, PATCH 메소드를 사용한다.
+- 회원 가입, 상품 주문, 리소스 등록, 리소스 변경등을 할 때 사용하는 방법이다.
+
+
+### 클라이언트에서 서버로 데이터를 전송하는 4가지 상황
+
+- 정적 데이터(텍스트, 이미지)를 조회 할 때
+- 동적 데이터를 조회할 때
+  - 주로 검색이나 게시판 목록에서 정렬 필터(검색어)를 사용할 때
+- HTML Form을 통해서 데이터를 전송 할 때
+  - 회원가입, 상품 주문, 데이터 변경 등
+- HTTP API를 통해서 데이터를 전송할 때
+  - 회원가입, 상품 주문, 데이터 변경 등
+  - 서버 to 서버, 앱 클라이언트, 웹 클라이언트(Ajax)
+
+
+### 정적 데이터를 조회할 때
+
+- 쿼리 파라미터를 사용하지 않는다.
+- 이미지, 정적 텍스트를 문서를 조회할 때에 해당한다.
+- 조회할 때에는 GET 메소드를 사용한다.
+- 정적 데이터는 쿼리파라미터없이 리소스 경로로 단순하게 조회할 수 있다.
+
+> GET /static/star.jpg HTTP/1.1  
+> Host: localhost:8080  
+
+- /static/star.jpg
+> HTTP/1.1 200 OK  
+> Content-Type: image/jpeg  
+> Content-Length: 34012  
+>  .  
+>  falf2l3j42ljrdlajff2lfj23ffadslfa  
+>  f2l3fj23lfj23lkfj2lfj
+
+
+### 동적 데이터를 조회할 때
+
+> https:/<d>/www<d>.google.com/search?q=hello&hl=ko  
+
+> GET /search?q=hello&hl=ko HTTP/1.1  
+> Host: www.google.com  
+
+- 쿼리 파라미터를 기반으로 필터링하여 데이터를 동적으로 생성한다.
+- 조회이므로 GET 메소드를 사용한다.
+- GET 메소드인데 데이터를 전송해야 할 경우에는 쿼리파라미터를 사용한다.
+
+
+### HTML Form을 통한 데이터 전송
+
+#### POST 전송을 통한 **저장**하기
+
+``` html
+<form action="/save" method="post"> 
+  <input type="text" name="username" /> // kim 입력
+  <input type="text" name="age" />  // 20 입력
+  <button type="submit">전송</button>
+</form>
+```
+
+- 요청 메세지
+> POST /save HTTP/1.1  
+> Host: localhost:8080  
+> Content-Type: application/x-www-form-urlencoded  
+>   . 
+> username=kim&age=20
+
+
+#### GET 전송을 통한 **저장**하기
+
+``` html
+<form action="/save" method="get"> 
+  <input type="text" name="username" /> // kim 입력
+  <input type="text" name="age" />  // 20 입력
+  <button type="submit">전송</button>
+</form>
+```
+
+- 요청 메세지 --> 잘못된 방식, GET은 조회할 때만 사용한다, 리소스 변경이 발생하는 곳(save)에서 사용하면 안됨.
+> GET /save?username=kim&age=20 HTTP/1.1  
+> Host: localhost:8080  
+
+
+
+#### GET 전송을 통한 **조회**하기
+
+``` html
+<form action="/members" method="get"> 
+  <input type="text" name="username" /> // kim 입력
+  <input type="text" name="age" />  // 20 입력
+  <button type="submit">전송</button>
+</form>
+```
+
+
+> GET /members?username=kim&age=20 HTTP/1.1  
+> Host: localhost:8080
+
+#### multipart/form-data
+
+```html
+<form action="/save" method="post" enctype="multipart/form-data">
+  <input type="text" name="username"/>
+  <input type="text" name="age"/>
+  <input type="file" name="file1"/>
+  <button type="submit">전송</button>
+</form>
+```
+
+- 요청 HTTP 메세지
+> POST /save HTTP/1.1  
+> Host: localhost:8080  
+> Content-Type: multipart/form-data; boundary=-----XXX  
+> Content-Length: 10457  
+>   
+> 
+> -----XXX  
+> Content-Disposition: form-data;name="username"  
+> 
+> 
+> kim  
+> -----XXX  
+> Content-Disposition: form-data;name="age"  
+>   
+> 20  
+> -----XXX  
+> Content-Disposition: form-data;name="file1";filename="intro.png"  
+> Content-Type: image/png  
+>   
+> 012998daskjfhaskf3hfakfjhakj  
+> -----XXX--  
+> 
+
+
+### HTML Form을 통한 데이터 전송 요약
+
+- HTML Form submit시 Post 메소드를 사용한다.
+  - 예) 회원가입, 상품주문, 데이터 변경
+- Content-Type: application/x-www-form-urlencoded 사용
+  - form 내용을 메세지 바디를 통해서 전송한다.(key-value(=쿼리파라미터형식))
+  - 전송 데이터를 url encoding 처리한다.
+    - 예)abc --> abc%EA%B9%80
+- HTML Form은 GET 전송도 가능하다.
+- Content-Type: multipart/form-data
+  - 파일 업로드 같은 바이너리 데이터 전송시 사용한다.
+  - 다른 종류의 여러 파일과 폼의 내용 함께 전송 가능하다.
+- HTML Form은 GET과 POST만 지원한다.
+
+
+### HTTP API를 통한 데이터 전송
+
+> POST /members HTTP/1.1  
+> Content-Type: application/json
+>   
+> {  
+>   "username": "young"  
+>   "age": 20  
+> }  
+
+- 서버 to 서버 
+  - 백엔드 시스템 통신
+- 앱 클라이언트 
+  - 아이폰, 안드로이드
+- 웹 클라이언트
+  - HTML에서 Form 전송 대신 자바스크립트를 통한 통신에 사용(AJAX)
+  - 예)React, VueJS 같은 웹 클라이언트와 API 통신
+- POST, PUT, PATCH: 메세지 바디를 통한 데이터 전송
+- GET:조회, 쿼리 파라미로 데이터를 전송
+- Content-Type:application/josn 주로 사용 (사실상 표준)
+  - TEXT, XML, JSON 등 
+
+
+
+## HTTP API 설계 예시
+
+- HTTP API - 컬렉션
+  - POST 기반으로 등록한다.
+  - 예) 회원관리 API 제공
+- HTTP API - 스토어
+  - PUT 기반으로 등록한다.
+  - 예) 정적 컨텐츠 관리, 원격 파일 관리
+- HTML FORM 사용
+  - 웹 페이지 회원 관리
+  - GET, POST만 지원한다.
+
+### 회원 관리 시스템 API 설계 - POST 기반 등록 
+
+- 회원 목록 /members -> GET
+- 회원 등록 /members -> POST
+- 회원 조회 /members/{id} --> GET
+- 회원 수정 /members/{id} --? PATCH, PUT, POST
+- 회원 삭제 /members/{id} --? DELETE
+
+### 회원 관리 시스템 POST 기반 신규 자원 등록 특징
+- 클라이언트는 등록될 리소스의 URI를 모른다.
+  - 따라서 회원등록은 POST /members
+- 서버가 새로 등록된 리소스 URI를 생성한다.
+  - HTTP/1.1 201 Created
+  - Location: /members/100
+- 컬렉션(Collection)
+  - 서버가 관리하는 리소스 디렉토리를 말한다.
+  - 서버가 리소스의 URI를 생성하고 관리한다.
+  - 여기서 컬렉션은 /members
+
+
+### 파일 관리 시스템 API 설계 - PUT 기반 등록 
+
+- 파일 목록 /files --> GET
+- 파일 조회 /files/{filename} --> GET
+- 파일 등록 /files/{filename} --> PUT
+- 파일 삭제 /files/{filename} --> DELETE
+- 파일 대량 등 /files --> POST
+
+### 파일 관리 시스템 API 설계 - 신규 자원 등록 특징
+
+- 클라이언트가 리소스 URI를 알고 있다.
+  - 파일 등록 /files/{filename} --> PUT
+  - PUT /files/star.jpg
+- 클라이언트가 직접 리소스의 URI를 지정한다.
+- 스토어(Store)
+  - 클라이언트가 관리하는 리소스 저장소를 말한다.
+  - 클라이언트가 리소스의 URI를 알고관리한다.
+  - 여기서 스토어는 /files
+
+
+### HTML Form 사용
+
+- HTML Form은 GET, POST만 지원한다.
+- AJAX와 같은 기술을 사용해서 해결이 가능하 --> 회원 API 참고
+- 여기서는 순수 HTML, HTML Form 이야기
+- GET, POST만 지원하므로 제약이 있다.
+
+### HTML Form 사용
+
+- 회윈 목록 /members --> GET
+- 회원 등록 폼 /members/new --> GET
+- 회원 등록 /members/new, /members --> POST
+- 회원 조회 /members/{id} --> GET
+- 회원 수정 폼 /members/{id}/edit --> GET
+- 회원 수정 /members/{id}/edit, /members/{id}--> POST
+- 회원 삭제 /members/{id}/delete --> POST
+
+- HTML Form은 GET,POST만 지원해서 제약이 생긴다
+- 컨트롤 URI로 설계한다
+  - GET,POST만 지원하므로 제약이 있으니깐
+  - 이런 제약을 해결하기 위해 동사로된 리소스 경로를 사용할 수 밖에 없다.
+  - POST의 /new, /edit/, /delete가 컨트롤 URI을 의미한다.
+  - HTTP 메소드로 해결하기 애매한 경우에 사용한다.
+
+
+### 정리
+
+- HTTP API - 컬렉션
+  - POST기반 등록
+  - 서버가 리소스 URI를 결정한다.
+- HTTP API - 스토어
+  - PUT 기반 등록
+  - 클라이언트가 리소스 URI를 결정한다.
+- HTML FORM 사용
+  - 순수 HTML + HTML Form 사용
+  - GET, POST만 지원한다.
+
+### 참고하면 좋은 URI 설계 개념
+
+- 문서(document)
+  - 단일 개념(파일 하나, 객체 인스턴스, 데이터베이스)
+  - 예) /members/100, /files/star.jpg
+- 컬렉션(collection)
+  - 서버가 관리하는 리소스 디렉토리
+    - 서버가 리소스의 URI를 생성하고 관리한다.
+    - 예) /members
+- 스토어(store)
+  - 클라이언트가 관리하는 자원 저장소
+  - 클라이언트가 리소스의 URI를 알고 관리한다
+  - 예) /files
+- 컨트롤(controller), 컨트롤 URI
+  - 문서, 컬렉션, 스토어 해결하기 어려운 추가 프로세스 실행
+  - 동사를 직접 사용한다.
+  - 예) /members/{id}/delete
