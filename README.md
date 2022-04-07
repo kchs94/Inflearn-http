@@ -1119,3 +1119,365 @@
   - 문서, 컬렉션, 스토어 해결하기 어려운 추가 프로세스 실행
   - 동사를 직접 사용한다.
   - 예) /members/{id}/delete
+
+
+---
+
+# HTTP 상태코드
+
+> 클라이언트가 보낸 요청의 처리 상태를 숫자로 보여주는 기능
+
+- 1xx(Informational): 요청이 수신되어 처리중을 나타냄
+- 2xx(Successful): 요정이 정상적으로 처리됨
+- 3xx(Redirection): 요청을 완료하려면 추가 행동이 필요함을 나타냄
+- 4xx(Client Error): 클라이언트 오류(문법)으로 인해 서버가 요청을 수행할 수 없음
+- 5xx(Server Error): 서버 오류로 인해 서버가 정상 요청을 처리하지 못함
+
+
+### 만약 서버에서 클라이언트가 모르는 상태코드가 온다면?
+
+- 클라이언트는 상위 상태코드를 찾아서 해석한다.
+- 미래에 새로운 상태코드가 추가되어도 클라이언트를 변경하지 않아도 된다.
+- 예
+  - 299 ??? -> 2xx(성공)
+  - 451 ??? -> 4xx(클라이언트 에러)
+  - 599 ??? -> 5xx(서버 에러)
+
+### 1xx(Informational)
+
+- 요청이 수신되어 서버에서 처리중을 의미
+- 거의 사용되지 않음
+
+
+### 2xx(Successful)
+
+- 클라이언트의 요청이 성공적으로 처리됨
+- 200 OK
+- 201 Created
+- 202 Accepted
+- 204 No Content
+
+
+#### 200 OK
+
+- 요청 성공
+
+http 요청
+> GET /members/100 HTTP/1.1  
+> Host: localhost:8080  
+
+http 응답
+> HTTP/1.1 200 OK  
+> Content-Type: application/json  
+> Content-Length:34  
+>   
+> {  
+>   "username": "young"  
+>   "age": 20  
+> }
+
+
+#### 201 Created
+
+- 요청에 성공해서 새로운 리소스가 생성됨
+
+http 요청
+> POST /members HTTP/1.1  
+> Content-Type: application/json  
+>   
+> {  
+>   "username": "young"  
+>   "age": 20  
+> }
+
+http 응답
+- 생성된 리소스는 응답의 Location 헤더 필드로 식별
+> HTTP/1.1 201 Created  
+> Content-Type: application/json  
+> Content-Length: 34  
+> Location: /members/100
+>   
+> {  
+>   "username": "young"  
+>   "age": 20  
+> }
+
+#### 202 Accepted
+
+- 요청이 접수되었지만 아직 처리가 완료되지 않음
+- 배치처리 같은 곳에서 사용됨
+  - 예) 요청 접수 후 1시간 뒤에 배치 프로세스가 요청을 처리함
+
+
+#### 204 No Content
+
+- 서버가 요청을 성공했지만, 응답 페이로드 본문 보낼 데이터가 없는 상황
+- 예) 웹 문서 편집기 save 버튼
+- save 버튼의 결과로 아무 내용이 없어도 된다.
+- save 버튼을 눌러도 같은 화면을 유지해야 한다.
+- 결과 내용이 없어도 204 메시지 만으로 성공을 인식할 수 있다.
+
+
+### 3xx(리다이렉션)
+
+- 요청을 완료하기 위해 유저 에이전트의 추가적인 조치가 필요함을 나타냄
+- 300 Multiple Choice
+- 301 Moved Permanently
+- 302 Found
+- 303 See Other
+- 304 Not Modified
+- 307 Temporary Redirect
+- 308 Permanent Redirect
+
+### 리다이렉션의 이해
+
+- 웹 브라우저는 3xx 응답 결과에 Location 헤더가 있으면, Location 위치로 자동 이동(리다이렉트)한다.
+
+1. url:/event(요청)
+> GET /event HTTP/1.1  
+> Host: localhost:8080  
+
+2. 응답
+> HTTP/1.1 301 Moved Permanently  
+> Location: /new-event 
+
+3.url:/new-event(자동 리다이렉트)
+
+4.요청
+> GET /new-event HTTP/1.1  
+> Host: localhost:8080  
+
+5.응답
+> HTTP/1.1 200 OK  
+> ... 
+
+### 리다이렉션 종류
+
+- 영구 리다이렉션 - 특정 리소스의 URI가 영구적으로 바뀜
+  - 예) /members --> /users
+  - 예) /event -> /new-event
+- 일시 리다이렉션 - URI가 일시적으로 바뀜
+  - 주문 완료 후 주문 내역 화면으로 이동
+  - PRG: POST/Redirect/Get
+- 특수 리다이렉션 
+  - 결과 대신 캐시를 사용
+
+### 영구 리다이렉션 - 301, 308
+
+- 리소스의 URI를 영구적으로 이동
+- 원래의 URI는 사용하지 x, 검색 엔진 등에서도 변경을 감지함
+- 301 Moved Permanently
+  - 리다이렉트시 요청 메소드가 GET으로 변하고, 본문이 제거될 수 있음(may)
+- 308 Permanently Redirect
+  - 301과 기능은 같음
+  - 리다이렉트시 요청 메소드와 본문을 유지함(처음 post를 보내면 리다이렉트도 post 유지)
+
+### 영구 리다이렉션 - 301
+
+1. Post 사용(요청)
+> POST /event HTTP/1.1  
+> Host: localhost:8080  
+>   
+> name=hello&age=20 
+
+2. 응답
+> HTTP/1.1 301 Moved Permanently  
+> Location: /new-event
+
+3. 자동 리다이렉트
+- url:/new-event
+
+4. GET으로 변경(요청)
+> GET /new-event HTTP/1.1  
+> Host: localhost:8080  
+
+5. 응답 
+
+### 영구 리다이렉션 - 308
+
+1. Post 사용(요청)
+> POST /event HTTP/1.1  
+> Host: localhost:8080
+>
+> name=hello&age=20
+
+2. 응답
+> HTTP/1.1 308 Permanent Redirect 
+> Location: /new-event
+
+3. 자동 리다이렉트
+- url:/new-event
+
+4. POST 유지(요청)
+> POST /new-event HTTP/1.1  
+> Host: localhost:8080  
+>   
+> name=hello&age=20
+
+5. 응답 
+
+
+### 일시적인 리다이렉션 - 302, 307, 303
+
+- 리소스의 URI가 일시적으로 변경
+- 따라서 검색엔진 등에서 url을 변경하면 안됨
+- 302 Found
+  - 리다이렉트시 요청 메소드가 GET으로 변하고, 본문이 제거될 수 있음(may)
+- 307 Temporary Redirect
+  - 302와 기능은 같다
+  - 리다이렉트 요청 메소드와 본문이 유지된다.(요청 메소드를 바꾸면 안된다.)
+- 303 See Other
+  - 302와 기능이 같다
+  - 리다이렉트시 요청 메소드가 GET으로 변경된다.
+
+### PRG:POST/REDIRCT/GET
+
+- 일시적인 리다이렉션
+- POST로 주문후에 웹브라우저를 새로고침하면?
+- 새로고침은 다시 요청이다
+- 중복 주문이 될 수 있다.
+- POST로 주문후에 새로고침으로 인한 중복 주문을 방지한다.
+- POST로 주문후에 주문 결과 화을 GET 메소드로 리다이렉트
+- 새로고침해도 결과 화면을 GET으로 조회한다.
+- 중복 주문 대신에 결과 화면만 GET으로 다시 요청한다.
+
+### PRG 사용전
+
+1. url:/order(post요청)
+> POST /order HTTP/1.1  
+> Host: localhost:8080  
+>   
+> itemId=chicken&count=1
+
+2. 주문데이터 저장
+- chicken 1개
+
+3. 응답
+> HTTP/1.1 200 OK  
+>   
+> \<html>주문완료\</html>
+
+4. url:/order(결과 화면에서 새로고침(=다시요청))
+5. 요청
+> POST /order HTTP/1.1  
+> Host: localhost:8080
+>
+> itemId=chicken&count=1
+
+6. 주문데이터 저장
+- chicken 1개
+
+7. 응답
+> HTTP/1.1 200 OK
+>
+> \<html>주문완료\</html>
+
+
+### PRG 사용 후
+
+1. url:/order(요청)
+> POST /order HTTP/1.1  
+> Host: localhost:8080  
+>   
+> itemId=chicken&count=1
+
+2. 주문데이터 저장
+- chicken 1개
+
+3. 응답
+> HTTP/1.1 302 Found  
+> Location: /order-result/19  
+
+4. url:/order-result/19(자동 리다이렉트)
+
+5. 요청 
+> GET /order-result/19 HTTP/1.1  
+> Host: localhost:8080
+
+6. 주문 데이터 조회
+- 19번 주문
+
+7. 응답
+> HTTP/1.1 200 OK  
+>   
+> /<h/tml/>주문완료</html/> 
+
+8. 결과 화면에서 새로고침
+- 5번 요청으로 이동 
+
+- PRG 이후 리다이렉트
+- URL이 이미 post -> get으로 리다이렉트 됨
+- 새로고침 해도 get으로 결과 화면만 조회
+
+### 그래서 뭘 사용해야 되나요?
+
+- 잠깐 정리
+  - 302 Found - GET으로 변할 수 있음
+  - 307 Temporary Redirect 메소드가 변하면 안됨
+  - 303 See Other - 메소드가 GET으로 변경
+- 역사
+  - 처음 302 스펙의 의도는 HTTP 메소드르 유지하는 것
+  - 그런데 웹 브라우저들이 대부분 GET으로 바꾸어버림(일부는 다르게 동작)
+  - 그래서 모호한 302 대신 명확한 307, 303이 등장함(301대응으로 308도 등장)
+- 현실
+  - 307, 303을 권장하지만 현실적으로 이미 많은 애플리케이션 라이브러리들이 302를 기본값으로 사용
+  - 자동 리다이렉션시에 GET으로 변해도 되면 그냥 302 사용해도 큰 문제 없음 
+
+### 기타 리다이렉션 
+
+- 300 Multiple Choice: 사용 안함
+- 304 Not Modified
+  - 캐시 목적으로 사용
+  - 클라이언트에게 리소스가 수정되지 않았음을 알려준다. 따라서 클라이언트는 로컬 PC에 저장된 캐시를 재사용한다.(캐시를 리다이렉트한다.)
+  - 304 응답은 응답에 메세지 바디를 포함하면 안된다.(로컬 캐시를 사용해야 하므로)
+  - 조건부 GET, HEAD 요청시에 사용한다.
+
+## 4xx(클라이언트 오류)
+
+- 클라이언 요청의 잘못된 문법등으로 인해 서버가 요청을 처리할 수 없음
+- 오류의 원인은 클라이언트
+- 이미 요청이 잘못된 것이므로 다시 시도해도 또 실패한다.
+
+### 400 Bad Request 
+
+- 요청 구문, 메세지 등 오류
+- 클라이언트는 요청 내용을 검토하고 다시 보내야 한다.
+- 예) 요청 파라미터가 잘못되거나, API 스펙이 맞지 않을 때
+
+### 401 Unauthorized
+
+- 클라이언트가 해당 리소스에 인증(Authentication)이 필요함(=인증되지 않음)
+- 401 오류 발생 시 응답이 WWW-Authenticate 헤더와 함께 인증 방법을 설명
+- 참고
+  - 인증(Authentication): 본인이 누구인지 확인하는 것 - 로그인
+  - 인가(Authorization): 권한을 부여하는 것 (ADMIN처럼 특정 리소스에 접근할 수 있는 권, 인증이 있어야 인가를 할 수 있다.)
+  - 오류 메세지에 Unauthorized이지만 인증이 되지않은 것(이름이 아쉽다)
+
+### 403 Forbidden
+
+- 서버가 요청을 이해했지만 승인을 거부함을 나타냄
+- 주로 인증은 됐지만 접근 권한이 불충분한 경우일 때 발생
+- 예) 어드민 등급이 아닌 사용자가 로그인은 했지만, 어드민 등급의 리소스에 접근하는 경우
+
+### 404 Not Found
+
+- 요청 리소스를 찾을 수 없음
+  - 요청 리소스가 서버에 없어서,
+  - 또는 클라이언트가 권한이 없는 리소스에 접근할 떄 해당 리소스를 숨기고 싶을 때
+
+
+## 5xx(서버 오류)
+
+- 서버에 문제가 있음
+- 서버에 문제가 있기 때문에 재시도(다시 요청)하면 성공할 수도 있음(복구가 되거나 등등)
+
+### 500 Internal Server Error
+
+- 서버 문제로 오류 발생 애매하면 500 오류 
+
+### 503 Service Unavailable 
+
+- 서비스 이용 불가
+- 서버가 일시적인 과부하 또는 예정된 작업으로 잠시 요청을 처리할 수 없음
+- Retry-After 헤더 필드로 얼마뒤에 복구되는지 보낼 수도 있음
+- 
