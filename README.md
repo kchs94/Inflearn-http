@@ -1481,3 +1481,518 @@ http 응답
 - 서버가 일시적인 과부하 또는 예정된 작업으로 잠시 요청을 처리할 수 없음
 - Retry-After 헤더 필드로 얼마뒤에 복구되는지 보낼 수도 있음
 
+---
+
+## HTTP 헤더1 일반 헤더
+
+
+### HTTP 헤더의 구조
+
+- header-field(field-name) ":" (띄어쓰기 가능) field-value (띄어쓰기 가능)
+- 헤더필드는 대소문자를 구분하지 않는다.
+
+```text
+// HTTP 요청 예시
+GET /search?q=hello&hl=ko HTTP/1.1  
+Host: www.google.com  <-- HTTP 헤더
+```
+
+```text
+// HTTP 응답 예시
+HTTP/1.1 200 OK
+Content-Type: text/html;charset=UTF-8 // HTTP 헤더
+Content-Length: 3423    // HTTP 헤더
+
+<html>
+    <body>...</body>
+</html>
+```
+
+### HTTP 헤더를 왜 있는걸까?(용도)
+- HTTP 전송을 하기위해 필요한 부가 정보를 담기위해 사용한다.
+- 예를들어 전송하는 데이터의 형식을 알려줘야 형식에 알맞게 변환할 수 있다.
+  - 압축, 메세지 바디 형식, 메세지 바디의 길이, 요청 클라이언트, 서버 정보, 캐시 관리 정보 등
+- 표준 헤더가 엄청 많으니 필요할 때 그때마다 배우자
+- 내가 헤더를 만들 수도 있다.
+  - helloworld: hihi 
+
+
+### 과거에는... HTTP 헤더를 이렇게 분류했다 - RFC2616(199년)
+
+```http request
+POST / HTTP/1.1
+Host: localhost:8080 // Request Header
+User-Agent: Mozilla/5.0 (Macintosh;...).. Firefox/51.0 // Request Header 
+Accept: text/html, application/xhtml+xml,...,*/*;q=0.8 // Request Header
+Accept-Language: en-US,en;q=0.5 // Request Header
+Accept-Encoding: gzip, deflate // Request Header
+Connection: keep-alive // General header
+Upgrade-Insecure-Requests: 1 // General header
+Content-Type: multipart/form-data; boundary=-12352345 // Entity Header
+Content-Length: 345 // Entity Header
+```
+
+- 분류
+  - General 헤더: 메세지 전체에 적용되는 정보, 예) Connection: close
+  - Request 헤더: 요청 정보, 예) User-Agent: Moizilla/5.0(Macintosh;..)
+  - Response 헤더: 응답 정보, 예) Server:Apache
+  - Entity 헤더: 엔티티 본문(=message body)의 데이터를 해석할 수 있는 정보, 에)Content-Type: text/html, Content-Length: 3423
+    - 데이터 유형(html, json), 데이터 길이, 압축 정보 등
+    - 엔티티 본문은 요청이나 응답에서 전달하는 실제 데이터
+
+### 그런데...
+
+
+### 2014년 RFC7230~7235 등장
+
+- 199년에 등장한 RFC2616는 폐기된다.
+
+### RFC723x 이후 변화
+
+- 엔티티(Entity)를 표현(Representation)으로 명칭을 바꾸었다.
+- Representation(표현) = Representation Metadata + Representation Data
+  - 표현 = 표현 메타데이터 + 표현 데이터
+
+### RFC7230 적용한 헤더
+
+```http request
+// http 응답 예시
+HTTP/1.1 200 OK
+Content-Type: text.html;charset=UTF-8  // 표현 헤더
+Content-Length: 3423 // 표현 헤더
+
+// 표현 데이터
+<html>
+    <body> ... </body>
+</html>
+```
+
+- 메시지 바디(message body, 메세지 본문)을 통해서 표현 데이터를 전달한다
+- 메세지 본문 = 페이로드(payload)
+- 표현은 요청이나 응답에서 전달하는 실제 데이터다.
+- 표현 헤더는 표현 데이터를 해석할 수 있는 정보를 제공한다.
+  - 참고: 표현 헤더는 표현 메타데이터, 페이로드 메세지를 구분해야 되지만 여기서는 생략한다.
+- 표현 헤더는 Http 요청, 응답 모두에서 사용된다.
+
+### 표현 헤더의 종류
+
+- Content-Type: 표현 데이터의 형식을 알려준다
+- Content-Encoding: 표현 데이터의 압축 방식을 알려준다.
+- Content-Language: 표현 데이터의 자연 언어를 알려준다
+- Content-Length: 표현 데이터의 길이를 알려준다.
+
+### 표현 헤더 1. Content-Type
+
+- 표현 데이터의 형식을 알려준다
+- 예)
+  - text/html; charset=utf-8
+  - application/json
+  - image/png
+
+```http request
+HTTP/1.1 200 OK
+Content-Type: text/html;charset=UTF-8 
+Content-Length: 3423
+
+<html> 
+    <body>...</body>
+</html>
+```
+
+```http request
+HTTP/1.1 200 OK 
+Content-Type: application/json Content-Length: 16
+
+{"data":"hello"}
+```
+
+### 표현 헤더 2.Content-Encoding
+
+- 받는 쪽에서 압축을 풀어 표현 데이터를 해석할 수 있도록 명시한다.
+- 데이터를 전달하는 쪽에서 압축 후 인코딩 헤더를 추가한다.
+- 데이터를 읽는 쪽에서는 인코딩 헤더를 읽고 압축을 해제한다.
+- 예)
+  - gzip
+  - deflate
+  - identify
+
+```http request
+HTTP/1.1 200 OK
+Content-Type: text/html;charset=UTF-8 
+Content-Encoding: gzip 
+Content-Length: 521
+
+lkj123kljoiasudlkjaweioluywlnfdo912u34lj ko98udjkl
+```
+
+### 표현 헤더3.Content-Language
+
+- 콘텐츠가 어떤 언어로 작성되었는지 알려줍니다.
+- 예
+  - ko
+  - en
+  - en-US
+
+```http request
+HTTP/1.1 200 OK
+Content-Type: text/html;charset=UTF-8 
+Content-Language: ko 
+Content-Length: 521
+
+<html> 
+안녕하세요.
+</html>
+```
+
+```http request
+HTTP/1.1 200 OK
+Content-Type: text/html;charset=UTF-8 
+Content-Language: en 
+Content-Length: 521
+
+<html> 
+hello 
+</html>
+```
+
+### 표현 헤더 4.Content-Length
+
+- 표현 데이터의 길이를 나타낸다.
+- 단위는 바이트다.
+- Transfer-Encoding(전송 코딩)을 사용하면 Content-Length를 사용하면 안된다.
+
+```http request
+HTTP/1.1 200 OK
+Content-Type: text/html;charset=UTF-8 
+Content-Length: 5
+
+hello
+```
+
+### 협상 헤더
+
+- 클라이언트가 선호하는 표현으로 해주세요
+- Accept 헤더: 클라이언트가 선호하는 미디어 타입 명시
+- Accept-Charset: 클라이언트가 선호하는 문자 인코딩 타입 명시
+- Accept-Encoding: 클라이언트가 선호하는 압축 인코딩 타입 명시
+- Accept-Language: 클라이언트가 선호하는 자연 언어 명시
+- 협상 헤더는 Http 요청에만 사용할 수 있다.
+
+#### Accept-Language 적용 전
+
+<img width="1003" alt="image" src="https://user-images.githubusercontent.com/49191949/162694832-aef2fca5-779e-4363-a4db-70a055992503.png">
+
+- 클라이언트가 그냥 요청을 보내면 영어가 우선순위가 높기 때문에 영어로 보낸다.
+
+#### Accept-Language 적용 후
+
+<img width="985" alt="image" src="https://user-images.githubusercontent.com/49191949/162695155-05b35a75-2ac3-4b4c-8d4e-e188096a506f.png">
+
+- Http 요청 헤더에 Accept-Language를 넣어서 ko로 명시한다
+- 서버에 2번 째로 ko를 지원하므로 Content-Language를 ko로 해서 한국어로 보낸다.
+
+#### Accept-Language 복잡한 예시
+
+<img width="990" alt="image" src="https://user-images.githubusercontent.com/49191949/162696585-e0388230-6040-4126-b82a-9f35d869b692.png">
+
+- 사용자는 한국어를 원하는 데 다중 언어 서버에는 독일어가 1순위, 영어가 2순위다.
+- 결국 1순위인 독일어로 준다.
+
+### Accept-Language와 우선순위1
+
+- Quality Value,즉 q를 사용해 우선순위를 명시할 수 있다.
+- 0 < q < 1
+- q가 1에 가까울 수록 우선순위가 높다.
+- 생략하면 1이다.
+
+<img width="695" alt="image" src="https://user-images.githubusercontent.com/49191949/162698192-767a6672-bb5d-4061-bb68-e0d9b9a1123b.png">
+
+- ko-KR(q는 생략되었으니 1)
+- ko;q=0.9(2순위)
+- en-UF=0.8(3순위)
+- en=0.7(4순위)
+
+<img width="975" alt="image" src="https://user-images.githubusercontent.com/49191949/162698810-5ccca2db-df63-4033-84d6-6e29563e1d5f.png">
+
+- ko-KR는 1순위지만 지원하지 않으니 패스
+- ko는 2순위지만 지원하지 않으니 패스
+- en-UF는 3순위지만 지원하지 않으니 패스
+- en은 서버에서 지원하는 Content-Language다. 따라서 서버는 이 언어로 응답한다.
+
+### Accept와 우선순위
+
+- 구체적인 것을 우선한다.
+
+<img width="692" alt="image" src="https://user-images.githubusercontent.com/49191949/162699429-7a265a49-6e02-45e3-addb-c3e94b51a29d.png">
+
+- 구체적인 순위
+  1. text/plain;format=flowed
+  2. text/plain
+  3. text/*
+  4. */\*
+
+
+### 전송 방식
+
+- Transfer-Encoding
+- Range, Content-Range
+
+
+### 전송 방식 설명
+
+- 단순 전송
+- 압축 전송
+- 분할 전송
+- 범위 전송
+
+
+### 1.단순 전송
+
+<img width="1051" alt="image" src="https://user-images.githubusercontent.com/49191949/162700791-91515827-4543-4a86-a7a5-30ad847d7990.png">
+
+- Content-Length:3423
+
+### 2.압축 전송
+
+<img width="1088" alt="image" src="https://user-images.githubusercontent.com/49191949/162700899-ff41c9b7-ae80-4cad-ab93-b0d9713d0c85.png">
+
+- Http 응답에서
+- Content-Encoding: gzip
+
+### 3.분할 전송
+
+<img width="1175" alt="image" src="https://user-images.githubusercontent.com/49191949/162701327-0534ced9-4dcf-410f-93c1-a7b83319f78f.png">
+
+- Transfer-Encoding: chunked
+
+### 4.범위 전송(Range, Content-Range)
+
+<img width="1124" alt="image" src="https://user-images.githubusercontent.com/49191949/162701637-c9c727c8-aa1e-4f59-9916-d87b8da57daf.png">
+
+- Content-Range: bytes 1001-2000 / 2000
+
+### 일반 정보
+
+- From: 유저 에이전트의 이메일 정보
+- Referer: 이전 웹사이트의 주소
+- User-Agent: 유저 에이전트 애플리케이션 정보
+- Server: 요청을 기다리는 오리진 서버의 소프트웨어 정보
+- Date: 메세지가 생성된 날짜
+
+#### From 헤더
+
+- 유저 에이전트의 이메일 정보
+- 일반적으로 잘 사용되지 않는다.
+- 검색 엔진 같은 곳에서 주로 사용한다.
+- 요청에서 사용한다.
+
+
+### Referer 헤더
+
+- 이젠 웹페이지 주소를 명시한다.
+- 현재 요청된 페이지의 이전 웹페이지 주소를 나타낸다.
+- A-> B로 이동하는 경우 B를 요청할 때 Referer: A를 포함해서 요청
+- Referer를 사용해서 유입경로를 분석할 수 있다.
+- 요청에서 사용한다.
+- 참고:referer은 단어 referrer의 오타.
+
+### User-Agent 헤더
+
+- 유저 에이전트 에플리케이션 정보
+- user-agent: Mozilla/5.0 (Macintosh; intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36
+- 클라이언트 애플리케이션 정보를 명시한다.(웹브라우저 정보 등)
+- 통계 정보
+- 어떤 종류의 브라우저에서 장애가 발생하는지 파악할 수 있다.
+- 요청에서 사용한다.
+
+
+### Server 헤더
+
+- 요청을 처리하는 ORIGIN 서버의 소프트웨어 정보
+- 응답에서 작성한다.
+- Server: Apache/2.2.22(Debian)
+- server: nginx
+
+
+### Date 헤더
+
+- 메세지가 발생한 날짜와 시간을 명시한다.
+- Date: Tue, 15 Nov 1994 08:12:31 GMT
+- 응답에서 작성한다.
+
+### 특별한 정보
+
+- Host 헤더: 요청한 호스트의 정보(도메인)을 명시한다.
+- Location: 페이지 리다이렉션을 명시한다.
+- Allow: 허용 가능한 HTTP 메소드를 명시한다.
+- Retry-After: 유저 에이전트가 다음 요청을 하기까지 기다려야 하는 시간을 명시한다.
+
+### Host 헤더
+
+<img width="458" alt="image" src="https://user-images.githubusercontent.com/49191949/162718997-bab2b0f2-ae74-4ccf-8a57-eef8ba441c39.png">
+
+<img width="1028" alt="image" src="https://user-images.githubusercontent.com/49191949/162719999-62c7affa-78c7-4656-8a97-e76bf47c8468.png">
+
+- 요청한 호스트 정보(도메인)을 명시한다.
+- 요청에서 작성한다.
+- 필수다.
+- 하나의 서버가 여러 도메인을 처리해야 할 때 
+- 하나의 IP 주소에 여러 도메인이 적용되어 있을 때
+
+### Location 헤더
+
+- 페이지 리다이렉션을 명시한다.
+- 웹브라우저는 응답에 응답코드가 3xx에 Location 헤더가 있으면 , Location 위치로 자동으로 이동한다.(리다이렉트)
+- 201(Created)에서 Location 헤더는 요청에 의해 생성된 URI.
+- 3XX(Redirection)에서 Location 헤더는 요청을 자동 리다이렉션을 하기 위한 대상 리소스를 가리킨다.
+
+### Allow 헤더
+
+- 허용 가능한 HTTP 메소드를 명시한다.
+- 405(Method Not Allowed)를 상태코드로 하는 응답 메세지에 포함되야하는 헤더다.
+- Allow: GET, HEAD, PUT
+
+### Retry-After 헤더
+- 503(Service Unavailable) 상태코드: 서비스가 언제까지 불능인지 알려주는 상태코드
+- Retry-After: Fri, 31 Dec 1999 23:59:59 GMT(날짜 표기)
+- Retry-After: 120(초단위 표기)
+
+### 인증
+- Authorization 헤더: 클라이언트 인증 정보를 서버에 전달하는 헤더
+- WWW-Authenicate 헤더: 리소스 접근시 필요한 인증 방법을 정의
+
+#### Authorization 헤더
+
+- 클라이언트 인증 정보를 서버에 전달하는 헤더
+- Authoriztion: Basic xxxxxxxxxx
+
+#### WWW-Authenticate 헤더
+
+- 리소스 접근시 필요한 인증 방법을 정의하는 헤더
+- 401 Unauthorized 응답과 함께 사용한다.
+- WWW-Authencitate: Newauth realm="apps", type=1, title="Login to \"apps\"", Basic realm= "simple"
+
+### 쿠키
+
+- Set-Cookie 헤더
+  - Http 응답에서 사용하여 서버에서 클라이언트로 쿠키를 전달하는 헤더
+- Cookie 헤더
+  - 클라이언트 서버에서 받은 쿠키를 저장하고, Http 요청시 서버로 전달하는 헤더
+
+### 쿠키를 사용하지 않을 때
+
+- 처음 welcome 페이지에 접근할 때
+
+<img width="1038" alt="image" src="https://user-images.githubusercontent.com/49191949/162737228-c27f77e6-3904-4977-be6c-1d651ddcbaa6.png">
+
+- 로그인 할 때
+
+<img width="988" alt="image" src="https://user-images.githubusercontent.com/49191949/162737309-d7eaf486-76d7-4ce1-870e-722acc2cbbb4.png">
+
+### Stateless(무상태)
+
+- HTTP는 무상태 프로토콜이다.
+- 클라이언트와 서버는 요청과 응답을 주고받으면 연결이 끊긴다.
+- 클라이언트가 다시 요청할 때 서버는 이전 요청을 기억하지 않는다.
+- 클라이언트와 서버는 서로의 상태를 유지하지 않는다.
+
+### 쿠키 미사용일 때의 대안
+
+- **모든** http 요청에 사용자 정보를 넣어준다.
+
+<img width="972" alt="image" src="https://user-images.githubusercontent.com/49191949/162737744-855e01ae-4728-4906-846f-e4d69e0c676c.png">
+
+### 위 대안의 문제점: 모든 요청에 사용자 정보를 넣어야한다.
+
+<img width="681" alt="image" src="https://user-images.githubusercontent.com/49191949/162737936-6e4ac240-f124-4fbb-9406-ee1547e1d9c4.png">
+
+- 보안문제
+- 개발도 힘들다..
+
+### 쿠키를 사용할 때 로그인
+
+<img width="949" alt="image" src="https://user-images.githubusercontent.com/49191949/162738479-68a89f60-3674-44be-b100-956b4b3274fc.png">
+
+- post 요청으로 메세지 바디에 로그인 정보를 넣어서 요청을 보낸다.
+- 서버는 요청을 받고 쿠키를 생성(Set-Cookie)해서 클라이언트에 응답한다.
+- 클라이언트는 응답에서 받은 쿠키를 쿠키 저장소에 저장한다.
+
+### 쿠키를 사용한 해서 로그인한 이후 welcome page 접근
+
+<img width="982" alt="image" src="https://user-images.githubusercontent.com/49191949/162738698-03e0e2a3-fb74-4ae3-9672-bd35085f3d2d.png">
+
+- GET 요청에 쿠키 저장소에서 쿠키(Cookie)를 추가하여 요청한다.
+- 서버는 쿠키(Cookie)를 보고 이전 요청을 기억한다.
+
+### 모든 요청에 쿠키 정보가 자동 포함된다.
+
+<img width="792" alt="image" src="https://user-images.githubusercontent.com/49191949/162739421-09c8b356-6036-4180-9b1e-c270d6b5bc58.png">
+
+- 예)
+  - set-cookie: **sessionId**:abcde1234; **expires**=Sat, 26-Dec-2020 00:00:00 GMT; **path**=/; **domain**=.google.com; **Secure**
+  - 용도
+    - 사용자 로그인 세션을 관리할 때
+    - 광고 정보를 트래킹 할 때
+  - 쿠키 정보는 항상 서버에 전송된다.
+    - 그렇기 때문에 네트워크 트래픽을 추가로 유발하는 단점이 있다.
+    - 그렇기 때문에 최소한의 정보만 쿠키에 담아야 한다.(세션id, 인증 토큰)
+    - 서버에 전송하지 않고, 웹 브라우저 내부에 데이터를 저장하고 싶으면 웹 스토리(localStorage, sessionStorage) 참고
+  - 주의
+    - 중요한 데이터(주민번호, 신용카드 번호 등)은 쿠키에 저장하면 안된다.
+
+### 쿠키 생명주기
+
+- 쿠키 생명주기는 expires, max-age 키로 관리한다.
+- Set-Cookie: expires=Sat, 26-Dec-2020 04:39:21 GTM
+  - 만료일을 설정한다.
+  - 만료일이 지나면 쿠키는 삭제된다.
+- Set-Cookie: max-age=3600(3600초)
+  - 시간(초)로 쿠키의 생명을 설정한다.
+  - 시간이 지나면 자동으로 삭제된다.
+  - 0이나 음수를 지정하면 삭제된다.
+- 세션 쿠키
+  - 만료 날짜를 생략한 쿠키. 
+  - 브라우저 종료에 쿠키가 삭제된다.
+- 영속 쿠키
+  - 만료 날짜를 입력한 쿠키.
+  - 해당 날짜까지 쿠키가 유지된다.
+
+### 쿠키 - domain
+
+- 예) domain=example.org
+- 명시한 경우
+  - 명시한 도메인 + 서브 도메인에서 쿠키를 조회한다.
+  - domain=example.org에서 쿠키를 생성하고 이 domain을 지정함
+    - exmaple.org에도 쿠키를 조회
+    - dev.example.org에서도 접근한다.
+- 생략한 경우
+  - 현재 문서 기준 도메인에서만 쿠키를 사용한다.
+    - example.org에서 쿠키를 생성하고 domain 지정을 생략한다.
+      - example.org 에서만 쿠키 접근
+      - dev.example.org에서는 쿠키에 접근하지 않는다.
+
+### 쿠키 - path(경로)
+
+- 예) path=/home
+- 해당 경로를 포함한 하위 페이지에서만 쿠키가 접근한다.
+- 일반적으로 path=/(루트)로 지정한다.
+- 예)
+  - path=/home으로 지정하면
+  - /home 가능
+  - /home/level1 가능
+  - /home/leve1/level2 가능
+  - /hello 불가
+
+### 쿠키 - 보안(Seucre, HttpOnly, SameSite)
+
+- Secure
+  - 원래 쿠키는 http, https에 상관없이 전송된다.
+  - Secure를 명시하면 https에서만 전송된다.
+- HttpOnly
+  - XSS 공격을 방지한다.
+  - 자바스크립트에서 쿠키에 접근할 수 없다.
+  - Http 전송에서만 쿠키를 사용할 수 있다.
+- SameSite
+  - XSRF 공격을 방지한다.
+  - 요청 도메인과 쿠키에 설정된 도메인이 같은 경우에만 전송한다.
+
