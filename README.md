@@ -1983,6 +1983,7 @@ hello
   - /home/leve1/level2 가능
   - /hello 불가
 
+
 ### 쿠키 - 보안(Seucre, HttpOnly, SameSite)
 
 - Secure
