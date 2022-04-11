@@ -1,5 +1,5 @@
 # HTTP 웹 기본 지식
-<img width="381" alt="image" src="https://user-images.githubusercontent.com/49191949/162693292-4327c341-8d5a-43b9-b426-5122915a4948.png">
+
 
 ## 인터넷 통신
 
