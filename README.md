@@ -1,5 +1,6 @@
 # HTTP 웹 기본 지식
 
+
 ## 인터넷 통신
 
 - IP(Internet Protocol, 인터넷 프로토콜)
